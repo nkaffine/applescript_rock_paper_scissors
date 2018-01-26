@@ -1,0 +1,181 @@
+on addOne(theTable, theColumn, theRow)
+	getValue(theTable, theColumn, theRow)
+	set theValue to the result
+	set theValue to theValue + 1
+	tell application "Numbers"
+		open "/Users/Nick/Library/Mobile Documents/com~apple~Numbers/Documents/Rock Paper Scissors.numbers"
+		tell document "Rock Paper Scissors"
+			tell sheet "Data"
+				tell table theTable
+					set value of cell ((theColumn & " " & theRow) as text) to theValue
+				end tell
+			end tell
+		end tell
+	end tell
+end addOne
+on dumbestSubRoutine(wins, losses, ties)
+	if wins is 1 then
+		set theList to ((wins & "time") as text) as list
+	else
+		set theList to ((wins & "times") as text) as list
+	end if
+	if losses is 1 then
+		set theList to theList & ((losses & "time") as text) as list
+	else
+		set theList to theList & ((losses & "times") as text) as list
+	end if
+	if ties is 1 then
+		set theList to theList & ((ties & "time") as text) as list
+	else
+		set theList to theList & ((ties & "times") as text) as list
+	end if
+end dumbestSubRoutine
+
+on probabilityOfMoves(theTable, theRow)
+	set objects to {"Rock", "Paper", "Scissors"}
+	getValue(theTable, "Rock", theRow)
+	set Rock to the result
+	getValue(theTable, "Paper", theRow)
+	set Paper to the result
+	getValue(theTable, "Scissors", theRow)
+	set Scissors to the result
+	if Rock is greater than Scissors then
+		if Rock is greater than Paper then
+			return "Rock"
+		end if
+	end if
+	if Scissors is greater than Rock then
+		if Scissors is greater than Paper then
+			return "Scissors"
+		end if
+	end if
+	if Paper is greater than Scissors then
+		if Paper is greater than Rock then
+			return "Paper"
+		end if
+	end if
+	if Rock is 0 then
+		if Paper is 0 then
+			if Scissors is 0 then
+				return some item of objects
+			end if
+		end if
+	end if
+	if Rock = Scissors then
+		return some item of {"Rock", "Scissors"}
+	end if
+	if Rock = Paper then
+		return some item of {"Rock", "Paper"}
+	end if
+	if Paper = Scissors then
+		return some item of {"Paper", "Scissors"}
+	end if
+end probabilityOfMoves
+on probabilityOfFirstMove()
+	probabilityOfMoves("Probability of First Move", "Probability of First Move")
+end probabilityOfFirstMove
+
+on probabilityBasedOnPreviousMove(theMove)
+	probabilityOfMoves("Probability a Player will Throw a Certain Object Based on Previous Throw", theMove)
+end probabilityBasedOnPreviousMove
+
+on getValue(theTable, theColumn, theRow)
+	tell application "Numbers"
+		open "/Users/Nick/Library/Mobile Documents/com~apple~Numbers/Documents/Rock Paper Scissors.numbers"
+		tell document "Rock Paper Scissors"
+			tell sheet "Data"
+				tell table theTable
+					get value of cell ((theColumn & " " & theRow) as text)
+				end tell
+			end tell
+		end tell
+	end tell
+end getValue
+set previousPlayerChoice to "None"
+set playAgain to "Yes"
+set wins to 0
+set losses to 0
+set ties to 0
+
+
+
+
+repeat until playAgain is "No"
+	set Rock to {"Tie", "Loss", "Win"} as list
+	set Paper to {"Win", "Tie", "Loss"} as list
+	set Scissors to {"Loss", "Win", "Tie"} as list
+	if previousPlayerChoice is "None" then
+		probabilityOfFirstMove()
+		set thePredictedThrow to the result
+		if thePredictedThrow is "Rock" then set computerChoice to "Paper"
+		if thePredictedThrow is "Paper" then set computerChoice to "Scissors"
+		if thePredictedThrow is "Scissors" then set computerChoice to "Rock"
+	else
+		probabilityBasedOnPreviousMove(previousPlayerChoice)
+		set thePredictedThrow to the result
+		if thePredictedThrow is "Rock" then set computerChoice to "Paper"
+		if thePredictedThrow is "Paper" then set computerChoice to "Scissors"
+		if thePredictedThrow is "Scissors" then set computerChoice to "Rock"
+	end if
+	tell application "SpeechRecognitionServer"
+		set theResponse to listen for {"Rock", "Paper", "Scissors"} with prompt "Whenever you are ready, tell me whether you play Rock, Paper, or Scissors."
+	end tell
+	if theResponse is "Rock" then set responseCorrelation to 1
+	if theResponse is "Paper" then set responseCorrelation to 2
+	if theResponse is "Scissors" then set responseCorrelation to 3
+	if computerChoice is "Rock" then
+		set theResult to item responseCorrelation of Rock
+	end if
+	if computerChoice is "Paper" then
+		set theResult to item responseCorrelation of Paper
+	end if
+	if computerChoice is "Scissors" then
+		set theResult to item responseCorrelation of Scissors
+	end if
+	if previousPlayerChoice is "None" then
+		addOne("Raw Outcomes", computerChoice, theResult)
+	else
+		addOne("Raw Outcomes", computerChoice, theResult)
+		addOne("Player Previous Play Compared to Next Play", previousPlayerChoice, theResponse)
+	end if
+	if theResult is "Loss" then
+		set losses to losses + 1
+		dumbestSubRoutine(wins, losses, ties)
+		set theList to the result
+		set theWins to item 1 of theList
+		set theLosses to item 2 of theList
+		set theTies to item 3 of theList
+		tell application "SpeechRecognitionServer"
+			set playAgain to listen for {"Yes", "No"} with prompt "I threw " & computerChoice & "so congratulations, you won the match. You have won " & theLosses & ",lost " & theWins & ",and we have tied " & theTies & ". Would you like to play again?"
+		end tell
+	end if
+	if theResult is "Win" then
+		set wins to wins + 1
+		dumbestSubRoutine(wins, losses, ties)
+		set theList to the result
+		set theWins to item 1 of theList
+		set theLosses to item 2 of theList
+		set theTies to item 3 of theList
+		tell application "SpeechRecognitionServer"
+			set playAgain to listen for {"Yes", "No"} with prompt "I threw " & computerChoice & "so unfortunately, I won this time. You have won " & theLosses & ", lost " & theWins & ", and we have tied " & theTies & ".  Would you like to play again?"
+		end tell
+	end if
+	if theResult is "Tie" then
+		set ties to ties + 1
+		dumbestSubRoutine(wins, losses, ties)
+		set theList to the result
+		set theWins to item 1 of theList
+		set theLosses to item 2 of theList
+		set theTies to item 3 of theList
+		tell application "SpeechRecognitionServer"
+			set playAgain to listen for {"Yes", "No"} with prompt "I threw " & computerChoice & "so it was a tie. You have won " & theLosses & ", lost " & theWins & ", and we have tied " & theTies & ". Would you like to play again?"
+		end tell
+	end if
+	if previousPlayerChoice is "None" then
+		addOne("First Move", theResponse, "What the Player Threw")
+	end if
+	set previousPlayerChoice to theResponse & " " & theResult
+	if playAgain is "No" then
+		say "It has been a pleasure playing with you. I look forward to challenging you in the future."
+	end if
+end repeat
